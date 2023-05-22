@@ -2,7 +2,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { StyleSheet, FlatList, Pressable, View } from 'react-native'
 
-import { getAll, remove } from '../../api/RestaurantEndpoints'
+import { getAll, remove, update } from '../../api/RestaurantEndpoints'
 import ImageCard from '../../components/ImageCard'
 import TextSemiBold from '../../components/TextSemibold'
 import TextRegular from '../../components/TextRegular'
@@ -39,26 +39,30 @@ export default function RestaurantsScreen ({ navigation, route }) {
         {item.averageServiceMinutes !== null &&
           <TextSemiBold>Avg. service time: <TextSemiBold textStyle={{ color: GlobalStyles.brandPrimary }}>{item.averageServiceMinutes} min.</TextSemiBold></TextSemiBold>
         }
+        <View style = {{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }} ></View>
         <TextSemiBold>Shipping: <TextSemiBold textStyle={{ color: GlobalStyles.brandPrimary }}>{item.shippingCosts.toFixed(2)}€</TextSemiBold></TextSemiBold>
+        {item.promoted &&
+                  <TextRegular textStyle={[styles.badge, { color: GlobalStyles.brandPrimary, borderColor: GlobalStyles.brandSuccess }] }>¡En promoción!</TextRegular>
+        }
         <View style={styles.actionButtonsContainer}>
-          <Pressable
-            onPress={() => navigation.navigate('EditRestaurantScreen', { id: item.id })
-            }
-            style={({ pressed }) => [
-              {
-                backgroundColor: pressed
-                  ? GlobalStyles.brandBlueTap
-                  : GlobalStyles.brandBlue
-              },
-              styles.actionButton
-            ]}>
-          <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
-            <MaterialCommunityIcons name='pencil' color={'white'} size={20}/>
-            <TextRegular textStyle={styles.text}>
-              Edit
-            </TextRegular>
-          </View>
-        </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate('EditRestaurantScreen', { id: item.id })
+              }
+              style={({ pressed }) => [
+                {
+                  backgroundColor: pressed
+                    ? GlobalStyles.brandBlueTap
+                    : GlobalStyles.brandBlue
+                },
+                styles.actionButton
+              ]}>
+              <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
+                 <MaterialCommunityIcons name='pencil' color={'white'} size={20}/>
+                 <TextRegular textStyle={styles.text}>
+                    Edit
+                 </TextRegular>
+               </View>
+             </Pressable>
 
         <Pressable
             onPress={() => { setRestaurantToBeDeleted(item) }}
@@ -77,7 +81,24 @@ export default function RestaurantsScreen ({ navigation, route }) {
             </TextRegular>
           </View>
         </Pressable>
-        </View>
+        <Pressable
+              onPress={() => { newOrderProducts(item) }}
+              style={({ pressed }) => [
+                {
+                  backgroundColor: pressed
+                    ? GlobalStyles.brandSuccessDisabled
+                    : GlobalStyles.brandSuccess
+                },
+                styles.actionButton
+              ]}>
+            <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
+              <MaterialCommunityIcons name='sort' color={'white'} size={20} />
+              <TextRegular textStyle={styles.text}>
+                Sorted by: {item.sortedByPrice}
+              </TextRegular>
+            </View>
+          </Pressable>
+          </View>
       </ImageCard>
     )
   }
@@ -123,6 +144,23 @@ export default function RestaurantsScreen ({ navigation, route }) {
     } catch (error) {
       showMessage({
         message: `There was an error while retrieving restaurants. ${error} `,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
+  }
+
+  const newOrderProducts = async (restaurant) => {
+    try {
+      if (restaurant.sortedByPrice) {
+        await update(restaurant.params.id, { sortedByPrice: false })
+      } else {
+        await update(restaurant.params.id, { sortedByPrice: true })
+      }
+    } catch (error) {
+      showMessage({
+        message: `Mondongo. ${error}`,
         type: 'error',
         style: GlobalStyles.flashStyle,
         titleStyle: GlobalStyles.flashTextStyle
@@ -195,7 +233,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignSelf: 'center',
     flexDirection: 'column',
-    width: '50%'
+    width: '33%'
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -212,5 +250,11 @@ const styles = StyleSheet.create({
   emptyList: {
     textAlign: 'center',
     padding: 50
+  },
+  badge: {
+    textAlign: 'center',
+    borderWidth: 2,
+    paddingHorizontal: 10,
+    borderRadius: 10
   }
 })

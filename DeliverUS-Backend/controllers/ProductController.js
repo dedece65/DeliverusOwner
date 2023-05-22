@@ -24,15 +24,28 @@ exports.indexRestaurant = async function (req, res) {
 exports.show = async function (req, res) {
   // Only returns PUBLIC information of products
   try {
-    const product = await Product.findByPk(req.params.productId, {
-      include: [
-      {
-        model: ProductCategory,
-        as: 'productCategory'
-      }]
+    if (!req.body.sortByPrice) {
+      const product = await Product.findByPk(req.params.productId, {
+        include: [
+          {
+            model: ProductCategory,
+            as: 'productCategory'
+          }]
+      }
+      )
+      res.json(product)
+    } else {
+      const product = await Product.findByPk(req.params.productId, {
+        include: [
+          {
+            model: ProductCategory,
+            as: 'productCategory',
+            order: [['price', 'DESC']]
+          }]
+      }
+      )
+      res.json(product)
     }
-    )
-    res.json(product)
   } catch (err) {
     res.status(500).send(err)
   }
@@ -47,7 +60,7 @@ exports.create = async function (req, res) {
     newProduct = await newProduct.save()
     res.json(newProduct)
   } catch (err) {
-      res.status(500).send(err)
+    res.status(500).send(err)
   }
 }
 

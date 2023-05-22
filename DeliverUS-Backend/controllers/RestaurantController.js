@@ -51,7 +51,7 @@ exports.create = async function (req, res) {
     const restaurant = await newRestaurant.save()
     res.json(restaurant)
   } catch (err) {
-      res.status(500).send(err)
+    res.status(500).send(err)
   }
 }
 
@@ -69,7 +69,7 @@ exports.show = async function (req, res) {
         model: RestaurantCategory,
         as: 'restaurantCategory'
       }],
-      order: [[{model:Product, as: 'products'}, 'order', 'ASC']],
+      order: [[{ model: Product, as: 'products' }, 'order', 'ASC']]
     }
     )
     res.json(restaurant)
@@ -105,6 +105,31 @@ exports.destroy = async function (req, res) {
     }
     res.json(message)
   } catch (err) {
+    res.status(500).send(err)
+  }
+}
+
+exports.order = async function (req, res) {
+  const t = await models.sequelize.transaction()
+  try {
+    if (req.params.sortByPrice) {
+      await Restaurant.update(
+        { sortByPrice: false },
+        { where: { id: req.params.restaurantId } },
+        { transaction: t }
+      )
+    } else {
+      await Restaurant.update(
+        { sortByPrice: true },
+        { where: { id: req.params.restaurantId } },
+        { transaction: t }
+      )
+    }
+    await t.commit()
+    const updatedRestaurant = await Restaurant.findByPk(req.params.restaurantId)
+    res.json(updatedRestaurant)
+  } catch (err) {
+    await t.rollback()
     res.status(500).send(err)
   }
 }
